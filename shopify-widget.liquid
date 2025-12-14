@@ -1,0 +1,184 @@
+{% comment %}
+  HANG IT! POSTER PREVIEW - Widget Shopify
+  
+  INSTALARE:
+  1. Shopify Admin → Online Store → Themes → Edit code
+  2. Găsește sections/main-product.liquid
+  3. Lipește acest cod unde vrei widget-ul
+  4. Schimbă API_URL mai jos cu URL-ul tău Railway!
+{% endcomment %}
+
+<div id="hangit-widget" style="display:none">
+<style>
+#hangit-widget{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:100%;margin:24px 0;padding:24px;background:linear-gradient(135deg,#fefbf4,#f8f4eb);border-radius:16px;border:1px solid #e8e4db}
+.hangit-header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.hangit-header h3{margin:0;font-size:18px;font-weight:600}
+.hangit-form{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.hangit-input{flex:1;min-width:150px;padding:12px 16px;border:1px solid #ddd;border-radius:8px;font-size:15px}
+.hangit-input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.hangit-btn{padding:12px 24px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer}
+.hangit-btn:hover{background:#1d4ed8}
+.hangit-btn:disabled{background:#94a3b8;cursor:not-allowed}
+.hangit-loading{display:flex;align-items:center;justify-content:center;padding:40px;color:#64748b}
+.hangit-spinner{width:24px;height:24px;border:3px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;animation:spin .8s linear infinite;margin-right:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hangit-error{padding:12px 16px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#dc2626;margin-bottom:16px}
+.hangit-album{display:flex;align-items:center;gap:16px;padding:16px;background:#fff;border-radius:12px;margin-bottom:20px}
+.hangit-album img{width:72px;height:72px;border-radius:8px}
+.hangit-album h4{margin:0 0 4px;font-size:16px;font-weight:600}
+.hangit-album p{margin:0;font-size:14px;color:#64748b}
+.hangit-posters{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin:20px 0}
+.hangit-poster{text-align:center;cursor:pointer;transition:transform .2s}
+.hangit-poster:hover{transform:translateY(-4px)}
+.hangit-poster.selected img{outline:3px solid #2563eb;outline-offset:3px}
+.hangit-poster img{width:100%;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.hangit-poster span{display:block;margin-top:10px;font-size:14px;color:#475569}
+.hangit-poster.selected span{color:#2563eb;font-weight:600}
+.hangit-genre{padding:16px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;margin-bottom:16px}
+.hangit-genre p{margin:0 0 10px;font-size:14px;color:#92400e}
+.hangit-reset{background:transparent;color:#2563eb;border:2px solid #2563eb;margin-top:16px}
+.hangit-reset:hover{background:#eff6ff}
+.hidden{display:none!important}
+</style>
+
+<div class="hangit-header">
+  <span style="font-size:24px">🎨</span>
+  <h3>Personalizează posterul</h3>
+</div>
+
+<div id="h-search">
+  <div class="hangit-form">
+    <input type="text" id="h-artist" class="hangit-input" placeholder="Artist (ex: Kendrick Lamar)">
+    <input type="text" id="h-album" class="hangit-input" placeholder="Album (ex: DAMN.)">
+    <button type="button" id="h-btn" class="hangit-btn">Caută</button>
+  </div>
+</div>
+
+<div id="h-load" class="hangit-loading hidden">
+  <div class="hangit-spinner"></div>
+  <span>Se generează preview-ul...</span>
+</div>
+
+<div id="h-err" class="hangit-error hidden"></div>
+
+<div id="h-results" class="hidden">
+  <div id="h-album" class="hangit-album"></div>
+  
+  <div id="h-genre" class="hangit-genre hidden">
+    <p>⚠️ Gen muzical negăsit. Introdu manual:</p>
+    <div class="hangit-form">
+      <input type="text" id="h-genre-input" class="hangit-input" placeholder="ex: Hip-Hop, Rock...">
+      <button type="button" id="h-regen" class="hangit-btn">Regenerează</button>
+    </div>
+  </div>
+  
+  <p style="text-align:center;color:#64748b;font-size:14px;margin-bottom:12px">Selectează varianta:</p>
+  <div id="h-posters" class="hangit-posters"></div>
+  <button type="button" id="h-reset" class="hangit-btn hangit-reset">← Caută alt album</button>
+</div>
+
+<input type="hidden" name="properties[Artist]" id="p-artist">
+<input type="hidden" name="properties[Album]" id="p-album">
+<input type="hidden" name="properties[Varianta]" id="p-var">
+<input type="hidden" name="properties[Genre]" id="p-genre">
+</div>
+
+<script>
+(function(){
+  // ⚠️ SCHIMBĂ CU URL-UL TĂU RAILWAY:
+  const API = 'https://DOMENIUL-TAU.up.railway.app';
+  
+  const $ = id => document.getElementById(id);
+  const widget = $('hangit-widget');
+  widget.style.display = 'block';
+  
+  $('h-btn').onclick = search;
+  $('h-artist').onkeypress = e => e.key === 'Enter' && search();
+  $('h-album').onkeypress = e => e.key === 'Enter' && search();
+  $('h-regen').onclick = regen;
+  $('h-reset').onclick = reset;
+  
+  async function search() {
+    const artist = $('h-artist').value.trim();
+    const album = $('h-album').value.trim();
+    if (!artist || !album) return err('Introdu artist și album.');
+    
+    load(true);
+    try {
+      const r = await fetch(`${API}/api/generate-preview`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({artist, album})
+      });
+      const d = await r.json();
+      d.success ? show(d) : err(d.error || 'Negăsit.');
+    } catch(e) { err('Eroare conexiune.'); }
+    load(false);
+  }
+  
+  async function regen() {
+    const genre = $('h-genre-input').value.trim();
+    if (!genre) return err('Introdu gen.');
+    load(true);
+    try {
+      const r = await fetch(`${API}/api/generate-preview`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          artist: $('h-artist').value.trim(),
+          album: $('h-album').value.trim(),
+          genre
+        })
+      });
+      const d = await r.json();
+      d.success ? show(d) : err(d.error);
+    } catch(e) { err('Eroare.'); }
+    load(false);
+  }
+  
+  function show(d) {
+    $('h-search').classList.add('hidden');
+    $('h-results').classList.remove('hidden');
+    $('h-album').innerHTML = `
+      <img src="${d.album_info.cover}">
+      <div>
+        <h4>${d.album_info.name}</h4>
+        <p>${d.album_info.artist}</p>
+        <p>${d.album_info.release_year} · ${d.album_info.total_songs} piese</p>
+      </div>`;
+    $('h-genre').classList.toggle('hidden', d.album_info.genre_found || d.album_info.genre);
+    $('h-posters').innerHTML = d.posters.map(p => `
+      <div class="hangit-poster ${p.variant==='primary'?'selected':''}" data-v="${p.variant}" onclick="selPoster('${p.variant}')">
+        <img src="${p.preview}">
+        <span>${p.variant==='primary'?'Varianta 1':'Varianta 2'}</span>
+      </div>`).join('');
+    $('p-artist').value = d.album_info.artist;
+    $('p-album').value = d.album_info.name;
+    $('p-genre').value = d.album_info.genre || '';
+    $('p-var').value = 'Culoare primară';
+  }
+  
+  window.selPoster = function(v) {
+    document.querySelectorAll('.hangit-poster').forEach(el => 
+      el.classList.toggle('selected', el.dataset.v === v));
+    $('p-var').value = v === 'primary' ? 'Culoare primară' : 'Culoare accent';
+  };
+  
+  function reset() {
+    $('h-search').classList.remove('hidden');
+    $('h-results').classList.add('hidden');
+    ['h-artist','h-album','h-genre-input'].forEach(id => $(id).value = '');
+  }
+  
+  function load(on) {
+    $('h-load').classList.toggle('hidden', !on);
+    $('h-search').classList.toggle('hidden', on || !$('h-results').classList.contains('hidden'));
+  }
+  
+  function err(m) {
+    $('h-err').textContent = m;
+    $('h-err').classList.remove('hidden');
+    setTimeout(() => $('h-err').classList.add('hidden'), 5000);
+  }
+})();
+</script>
