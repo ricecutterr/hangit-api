@@ -32,6 +32,15 @@ def remove_diacritics(text):
         text = text.replace(d, r)
     return text
 
+def normalize_genre(genre: str):
+    if not genre:
+        return ""
+    g = genre.strip().lower()
+    if "manele" in g:
+        return "Trap"
+    return genre
+
+
 def is_black_and_white(img):
     arr = np.array(img.resize((100, 100))) / 255.0
     hsv = np.zeros_like(arr)
@@ -316,8 +325,11 @@ def generate():
         # Genre
         genre = d.get('genre', '')
         if not genre:
-            genres = [g.lower() for g in artist_data.get('genres', [])]
+            genres = [g for g in artist_data.get('genres', [])]
             genre = genres[0].title() if genres else ""
+
+        # 🔥 NORMALIZARE FINALĂ (CRITICĂ)
+        genre = normalize_genre(genre)
         
         # Label
         label = album.get("label", "Unknown")
