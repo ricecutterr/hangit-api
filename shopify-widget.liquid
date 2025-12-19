@@ -105,7 +105,7 @@
     
     load(true);
     try {
-      const r = await fetch(`${API}/api/generate-preview`, {
+      const r = await fetch(`${API}/api/generate`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({artist, album})
@@ -121,7 +121,7 @@
     if (!genre) return err('Introdu gen.');
     load(true);
     try {
-      const r = await fetch(`${API}/api/generate-preview`, {
+      const r = await fetch(`${API}/api/generate`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
