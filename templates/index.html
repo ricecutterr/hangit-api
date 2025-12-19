@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hang It! - Album Poster Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <style>
+        :root { --primary: #fefbf4; --secondary: #0e4274; --accent: #f9d558; --text: #2d3436; --text-light: #636e72; --border: #dfe6e9; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Outfit', sans-serif; background: var(--primary); min-height: 100vh; color: var(--text); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .app { display: flex; min-height: 100vh; }
+        .left { width: 520px; min-width: 520px; background: var(--primary); padding: 40px; border-right: 1px solid var(--border); overflow-y: auto; max-height: 100vh; }
+        .right { flex: 1; background: white; display: flex; align-items: center; justify-content: center; padding: 40px; overflow: auto; }
+        .header { margin-bottom: 30px; }
+        .logo { display: flex; align-items: center; gap: 16px; }
+        .logo-icon { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; }
+        .title { font-size: 28px; font-weight: 700; }
+        .subtitle { font-size: 14px; color: var(--text-light); margin-top: 4px; margin-left: 64px; }
+        .section-title { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+        .search-box { display: flex; gap: 10px; margin-bottom: 16px; }
+        .input { flex: 1; height: 48px; padding: 0 16px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; font-family: inherit; }
+        .input:focus { outline: none; border-color: var(--secondary); }
+        .btn { height: 48px; padding: 0 20px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; }
+        .btn-primary { background: var(--secondary); color: white; }
+        .btn-primary:hover { background: #0a3459; }
+        .btn-primary:disabled { background: #9ca3af; cursor: not-allowed; }
+        .btn-accent { background: var(--accent); color: var(--text); }
+        .btn-accent:hover { background: #e8c44e; }
+        .btn-outline { background: white; color: var(--text); border: 1px solid var(--border); }
+        .btn-outline:hover { background: var(--primary); }
+        .btn-full { width: 100%; }
+        .spinner { width: 18px; height: 18px; border: 2px solid transparent; border-top-color: currentColor; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        .results { margin-bottom: 16px; max-height: 400px; overflow-y: auto; }
+        .result { display: flex; align-items: center; gap: 14px; padding: 12px; background: white; border: 2px solid var(--border); border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; }
+        .result:hover { border-color: var(--secondary); background: rgba(14,66,116,0.02); }
+        .result.selected { border-color: var(--secondary); background: rgba(14,66,116,0.05); }
+        .result-img { width: 56px; height: 56px; border-radius: 8px; object-fit: cover; }
+        .result-info { flex: 1; min-width: 0; }
+        .result-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .result-artist { font-size: 13px; color: var(--text-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .result-meta { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+        .result-check { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+        .result.selected .result-check { background: var(--secondary); border-color: var(--secondary); color: white; }
+        .card { background: white; border-radius: 14px; padding: 18px; margin-bottom: 16px; border: 1px solid var(--border); }
+        .card-header { display: flex; gap: 14px; }
+        .card-img { width: 70px; height: 70px; border-radius: 10px; object-fit: cover; }
+        .card-info { flex: 1; }
+        .card-artist { font-size: 11px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
+        .card-name { font-size: 16px; font-weight: 700; margin: 3px 0; }
+        .card-meta { font-size: 12px; color: var(--text-light); }
+        .colors { margin-bottom: 16px; }
+        .color-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .color-label { width: 70px; font-size: 13px; font-weight: 500; }
+        .color-swatch { width: 40px; height: 40px; border-radius: 8px; border: 2px solid var(--border); cursor: pointer; }
+        .color-hex { font-size: 12px; font-family: monospace; }
+        .color-edit { padding: 5px 10px; border: 1px solid var(--border); border-radius: 6px; background: white; font-size: 11px; cursor: pointer; }
+        .color-edit:hover { background: var(--primary); }
+        .palette { display: flex; gap: 2px; margin-top: 10px; }
+        .palette-item { flex: 1; height: 24px; }
+        .palette-item:first-child { border-radius: 6px 0 0 6px; }
+        .palette-item:last-child { border-radius: 0 6px 6px 0; }
+        .genre { margin-bottom: 16px; }
+        .genre-input { width: 100%; height: 42px; padding: 0 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; margin-top: 6px; }
+        .empty { text-align: center; padding: 60px 40px; }
+        .empty-icon { width: 70px; height: 70px; background: var(--primary); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 20px; }
+        .empty-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+        .empty-text { font-size: 14px; color: var(--text-light); }
+        .preview { text-align: center; }
+        .preview-img { max-width: 300px; border-radius: 14px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); cursor: crosshair; }
+        .preview-title { font-size: 16px; font-weight: 600; margin-top: 16px; }
+        .preview-hint { font-size: 12px; color: var(--text-light); margin-top: 6px; }
+        .posters { display: flex; gap: 28px; flex-wrap: wrap; justify-content: center; }
+        .poster { text-align: center; }
+        .poster-img { width: 240px; border-radius: 10px; box-shadow: 0 15px 35px rgba(0,0,0,0.12); cursor: pointer; transition: transform 0.2s; }
+        .poster-img:hover { transform: scale(1.02); }
+        .poster-label { margin-top: 10px; font-size: 13px; font-weight: 600; }
+        .poster-sub { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+        .poster-btns { display: flex; gap: 6px; margin-top: 10px; justify-content: center; }
+        .poster-btns .btn { height: 36px; padding: 0 14px; font-size: 12px; }
+        .success { text-align: center; margin-bottom: 24px; }
+        .success-icon { width: 56px; height: 56px; background: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 24px; color: white; }
+        .success-title { font-size: 20px; font-weight: 700; }
+        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background: white; border-radius: 16px; padding: 28px; max-width: 450px; width: 90%; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-title { font-size: 18px; font-weight: 700; }
+        .modal-close { width: 32px; height: 32px; border: none; background: var(--primary); border-radius: 50%; cursor: pointer; font-size: 18px; }
+        .picker-img { width: 100%; border-radius: 10px; cursor: crosshair; margin-bottom: 16px; }
+        .picker-preview { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+        .picker-swatch { width: 50px; height: 50px; border-radius: 10px; border: 2px solid var(--border); }
+        .picker-input { flex: 1; height: 44px; padding: 0 14px; border: 1px solid var(--border); border-radius: 8px; font-family: monospace; }
+        .picker-hint { font-size: 12px; color: var(--text-light); text-align: center; margin-bottom: 16px; }
+        .modal-btns { display: flex; gap: 10px; }
+        .modal-btns .btn { flex: 1; }
+        .fullscreen { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 2000; cursor: pointer; }
+        .fullscreen img { max-width: 90vw; max-height: 90vh; border-radius: 8px; }
+        .fullscreen-hint { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.6); font-size: 13px; }
+        .loading { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(254,251,244,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1500; }
+        .loading-spinner { width: 44px; height: 44px; border: 3px solid var(--border); border-top-color: var(--secondary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
+        .loading-text { font-size: 15px; font-weight: 500; }
+        @media (max-width: 1100px) { .app { flex-direction: column; } .left { width: 100%; min-width: auto; max-height: none; border-right: none; border-bottom: 1px solid var(--border); } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useRef, useEffect } = React;
+
+        function App() {
+            const [step, setStep] = useState('search');
+            const [loading, setLoading] = useState(false);
+            const [loadingText, setLoadingText] = useState('');
+            const [searchQuery, setSearchQuery] = useState('');
+            const [searchResults, setSearchResults] = useState([]);
+            const [selectedResultId, setSelectedResultId] = useState(null);
+            const [album, setAlbum] = useState(null);
+            const [colors, setColors] = useState(null);
+            const [genre, setGenre] = useState('');
+            const [posters, setPosters] = useState([]);
+            const [colorPicker, setColorPicker] = useState(null);
+            const [fullscreen, setFullscreen] = useState(null);
+
+            const searchAlbum = async () => {
+                if (!searchQuery.trim()) return;
+                setLoading(true);
+                setLoadingText('Searching...');
+                try {
+                    const res = await fetch('/api/search', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query: searchQuery })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        setSearchResults(data.results);
+                        setSelectedResultId(null);
+                        setStep('results');
+                    } else {
+                        alert(data.error || 'No results found');
+                    }
+                } catch (e) {
+                    alert('Search error');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const selectAlbum = async () => {
+                if (!selectedResultId) return;
+                setLoading(true);
+                setLoadingText('Loading album details...');
+                try {
+                    const res = await fetch('/api/select-album', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ album_id: selectedResultId })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        setAlbum(data.album);
+                        setColors(data.album.colors);
+                        setGenre(data.album.genre || '');
+                        setStep('colors');
+                    } else {
+                        alert(data.error || 'Error loading album');
+                    }
+                } catch (e) {
+                    alert('Error loading album');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const generatePosters = async () => {
+                setLoading(true);
+                setLoadingText('Generating posters...');
+                try {
+                    const res = await fetch('/api/generate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ album, colors, genre: genre || album.genre || 'Unknown' })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        setPosters(data.posters);
+                        setStep('preview');
+                    } else {
+                        alert(data.error || 'Error generating');
+                    }
+                } catch (e) {
+                    alert('Error generating posters');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const pickColor = async (e, img) => {
+                const rect = img.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                try {
+                    const res = await fetch('/api/pick-color', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ x, y, cover: album.cover, cover_path: album.cover_path, preview_width: img.width, preview_height: img.height })
+                    });
+                    const data = await res.json();
+                    if (data.success) return { hex: data.color, rgb: data.rgb };
+                } catch (e) {}
+                return null;
+            };
+
+            const updateColor = (type, hex) => {
+                const rgb = hex.replace('#','').match(/.{2}/g).map(x => parseInt(x, 16));
+                setColors(prev => ({ ...prev, [type]: hex, [`${type}_rgb`]: rgb }));
+            };
+
+            const reset = () => {
+                setStep('search');
+                setSearchResults([]);
+                setSelectedResultId(null);
+                setAlbum(null);
+                setColors(null);
+                setGenre('');
+                setPosters([]);
+                setSearchQuery('');
+            };
+
+            return (
+                <div className="app">
+                    {loading && <div className="loading"><div className="loading-spinner"></div><div className="loading-text">{loadingText}</div></div>}
+                    
+                    <div className="left">
+                        <div className="header">
+                            <div className="logo"><img src="/static/logo.png" alt="Hang It!" className="logo-icon" style={{objectFit: 'contain'}} /><h1 className="title">Hang It!</h1></div>
+                            <p className="subtitle">Album Poster Generator</p>
+                        </div>
+
+                        {step === 'search' && (
+                            <div className="fade-in">
+                                <h2 className="section-title">Search Album</h2>
+                                <div className="search-box">
+                                    <input className="input" placeholder="Artist - Album title" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} onKeyPress={e => e.key === 'Enter' && searchAlbum()} autoFocus />
+                                    <button className="btn btn-primary" onClick={searchAlbum} disabled={!searchQuery.trim()}>{loading ? <span className="spinner"></span> : 'Search'}</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {step === 'results' && (
+                            <div className="fade-in">
+                                <h2 className="section-title">Select Album ({searchResults.length} results)</h2>
+                                <div className="results">
+                                    {searchResults.map(r => (
+                                        <div key={r.id} className={`result ${selectedResultId === r.id ? 'selected' : ''}`} onClick={() => setSelectedResultId(r.id)}>
+                                            <img className="result-img" src={r.cover} alt={r.name} />
+                                            <div className="result-info">
+                                                <div className="result-name">{r.name}</div>
+                                                <div className="result-artist">{r.artist}</div>
+                                                <div className="result-meta">{r.release_year} · {r.total_tracks} tracks</div>
+                                            </div>
+                                            <div className="result-check">{selectedResultId === r.id ? '✓' : ''}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div style={{display:'flex',gap:'10px'}}>
+                                    <button className="btn btn-outline" onClick={() => setStep('search')}>← Back</button>
+                                    <button className="btn btn-primary btn-full" onClick={selectAlbum} disabled={!selectedResultId}>Continue →</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {(step === 'colors' || step === 'preview') && album && (
+                            <div className="fade-in">
+                                <div className="card">
+                                    <div className="card-header">
+                                        <img className="card-img" src={album.cover} alt={album.name} />
+                                        <div className="card-info">
+                                            <div className="card-artist">{album.artist}</div>
+                                            <div className="card-name">{album.name}</div>
+                                            <div className="card-meta">{album.release_year} · {album.total_songs} songs · {album.duration}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {step === 'colors' && (
+                                    <>
+                                        <div className="colors">
+                                            <h2 className="section-title">Poster Colors</h2>
+                                            <div className="color-row">
+                                                <span className="color-label">Primary</span>
+                                                <div className="color-swatch" style={{background: colors.dominant}}></div>
+                                                <span className="color-hex">{colors.dominant.toUpperCase()}</span>
+                                                <button className="color-edit" onClick={() => setColorPicker('dominant')}>Edit</button>
+                                            </div>
+                                            <div className="color-row">
+                                                <span className="color-label">Accent</span>
+                                                <div className="color-swatch" style={{background: colors.accent}}></div>
+                                                <span className="color-hex">{colors.accent.toUpperCase()}</span>
+                                                <button className="color-edit" onClick={() => setColorPicker('accent')}>Edit</button>
+                                            </div>
+                                            <div className="palette">
+                                                {colors.palette.map((c, i) => <div key={i} className="palette-item" style={{background: c}} title={c}></div>)}
+                                            </div>
+                                        </div>
+
+                                        {!album.genre && (
+                                            <div className="genre">
+                                                <h2 className="section-title">Music Genre</h2>
+                                                <p style={{fontSize:'12px',color:'var(--text-light)'}}>Genre not detected. Enter manually:</p>
+                                                <input className="genre-input" placeholder="e.g. Rock, Pop, Hip-Hop..." value={genre} onChange={e => setGenre(e.target.value)} />
+                                            </div>
+                                        )}
+
+                                        <button className="btn btn-primary btn-full" onClick={generatePosters}>Generate Posters</button>
+                                    </>
+                                )}
+
+                                {step === 'preview' && <button className="btn btn-accent btn-full" onClick={reset}>Create New Poster</button>}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="right">
+                        {step === 'search' && <div className="empty"><div className="empty-icon">🎵</div><h3 className="empty-title">Search for an album</h3><p className="empty-text">Enter artist and album name to generate a poster</p></div>}
+                        
+                        {step === 'results' && searchResults.length > 0 && (
+                            <div className="preview scale-in">
+                                {selectedResultId ? (
+                                    <>
+                                        <img className="preview-img" src={searchResults.find(r => r.id === selectedResultId)?.cover} alt="Selected" />
+                                        <h3 className="preview-title">{searchResults.find(r => r.id === selectedResultId)?.name}</h3>
+                                        <p className="preview-hint">Click Continue to customize colors</p>
+                                    </>
+                                ) : (
+                                    <div className="empty"><div className="empty-icon">👆</div><h3 className="empty-title">Select an album</h3><p className="empty-text">Click on an album from the list</p></div>
+                                )}
+                            </div>
+                        )}
+
+                        {step === 'colors' && album && (
+                            <div className="preview scale-in">
+                                <img className="preview-img" src={album.cover} alt={album.name} onClick={e => pickColor(e, e.target)} />
+                                <h3 className="preview-title">{album.name}</h3>
+                                <p className="preview-hint">💡 Click on cover to pick a color</p>
+                            </div>
+                        )}
+
+                        {step === 'preview' && posters.length > 0 && (
+                            <div>
+                                <div className="success"><div className="success-icon">✓</div><h2 className="success-title">Posters Generated!</h2></div>
+                                <div className="posters">
+                                    {posters.map((p, i) => (
+                                        <div key={i} className="poster">
+                                            <img className="poster-img" src={p.preview} alt={p.type} onClick={() => setFullscreen(p.preview)} />
+                                            <div className="poster-label">{p.type === 'primary' ? 'Primary Color' : 'Accent Color'}</div>
+                                            <div className="poster-sub">Click to enlarge</div>
+                                            <div className="poster-btns">
+                                                <button className="btn btn-primary" onClick={() => window.open(`/api/download/${p.name}`)}>JPG</button>
+                                                <button className="btn btn-outline" onClick={() => window.open(`/api/download/${p.tiff_name}`)}>TIFF</button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {colorPicker && (
+                        <ColorPickerModal type={colorPicker} album={album} currentColor={colors[colorPicker]} onClose={() => setColorPicker(null)} onApply={hex => { updateColor(colorPicker, hex); setColorPicker(null); }} pickColor={pickColor} />
+                    )}
+
+                    {fullscreen && <div className="fullscreen" onClick={() => setFullscreen(null)}><img src={fullscreen} alt="Fullscreen" /><div className="fullscreen-hint">Click to close</div></div>}
+                </div>
+            );
+        }
+
+        function ColorPickerModal({ type, album, currentColor, onClose, onApply, pickColor }) {
+            const [color, setColor] = useState(currentColor);
+            const imgRef = useRef(null);
+            
+            const handlePick = async (e) => {
+                const result = await pickColor(e, imgRef.current);
+                if (result) setColor(result.hex);
+            };
+            
+            return (
+                <div className="modal" onClick={onClose}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3 className="modal-title">Edit {type === 'dominant' ? 'Primary' : 'Accent'} Color</h3>
+                            <button className="modal-close" onClick={onClose}>×</button>
+                        </div>
+                        <img ref={imgRef} className="picker-img" src={album.cover} alt="Pick" onClick={handlePick} />
+                        <div className="picker-preview">
+                            <div className="picker-swatch" style={{background: color}}></div>
+                            <input className="picker-input" value={color} onChange={e => { if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) setColor(e.target.value); }} />
+                        </div>
+                        <p className="picker-hint">💡 Click on the cover to pick a color</p>
+                        <div className="modal-btns">
+                            <button className="btn btn-outline" onClick={onClose}>Cancel</button>
+                            <button className="btn btn-primary" onClick={() => onApply(color)}>Apply</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
