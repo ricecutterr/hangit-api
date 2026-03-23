@@ -418,7 +418,7 @@ def create_poster(album_data, cover_img, dominant_color, accent_color, color_pal
     draw.text((text_x, album_y), album_title, fill=text_color, font=album_font)
     
     # Cover
-    .paste(cover_img.resize((cover_size, cover_size)), (cover_x, cover_y))
+    poster.paste(cover_img.resize((cover_size, cover_size)), (cover_x, cover_y))
     
     # Spotify Code
     code_img = generate_spotify_code_api(album_data['spotify_url'], rgb_to_hex(bg_color), choose_code_color(bg_color))
