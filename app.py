@@ -406,7 +406,7 @@ def create_poster(album_data, cover_img, dominant_color, accent_color, color_pal
             track_font_path_regular = Path("arial.ttf")
             track_font_path_bold = Path("arialbd.ttf")
     
-     = Image.new("RGB", (WIDTH, HEIGHT), bg_color)
+    poster = Image.new("RGB", (WIDTH, HEIGHT), bg_color)
     draw = ImageDraw.Draw()
     
     # Separators
