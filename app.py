@@ -406,8 +406,8 @@ def create_poster(album_data, cover_img, dominant_color, accent_color, color_pal
             track_font_path_regular = Path("arial.ttf")
             track_font_path_bold = Path("arialbd.ttf")
     
-    poster = Image.new("RGB", (WIDTH, HEIGHT), bg_color)
-    draw = ImageDraw.Draw(poster)
+     = Image.new("RGB", (WIDTH, HEIGHT), bg_color)
+    draw = ImageDraw.Draw()
     
     # Separators
     draw.rectangle([(separator_x, separator_top_y), (separator_x + separator_width, separator_top_y + separator_height)], fill=text_color)
@@ -418,7 +418,7 @@ def create_poster(album_data, cover_img, dominant_color, accent_color, color_pal
     draw.text((text_x, album_y), album_title, fill=text_color, font=album_font)
     
     # Cover
-    poster.paste(cover_img.resize((cover_size, cover_size)), (cover_x, cover_y))
+    .paste(cover_img.resize((cover_size, cover_size)), (cover_x, cover_y))
     
     # Spotify Code
     code_img = generate_spotify_code_api(album_data['spotify_url'], rgb_to_hex(bg_color), choose_code_color(bg_color))
@@ -452,7 +452,7 @@ def create_poster(album_data, cover_img, dominant_color, accent_color, color_pal
     
     # Spotify Code (paste)
     if code_img:
-        poster.paste(code_img.resize((code_w, code_h)), (code_x, code_y))
+        .paste(code_img.resize((code_w, code_h)), (code_x, code_y))
     
     # Palette
     pal_w, pal_h = 110, 30
@@ -461,7 +461,7 @@ def create_poster(album_data, cover_img, dominant_color, accent_color, color_pal
     for i, color in enumerate(color_palette[:5]):
         draw.rectangle([(pal_start_x + i * pal_w, pal_y), (pal_start_x + (i + 1) * pal_w, pal_y + pal_h)], fill=color)
     
-    return poster
+    return 
 
 # ==========================================
 # ROUTES
@@ -672,15 +672,20 @@ def generate_posters():
             
             name = f"{clean_filename(album_info['artist'])}_{clean_filename(album_info['name'])}_poster{suffix}.jpg"
             tiff_name = name.replace('.jpg', '.tif')
+
+            previews_folder = Path(__file__).parent / 'static' / 'previews'
+            previews_folder.mkdir(exist_ok=True)
             
-            poster.save(os.path.join(UPLOAD_FOLDER, name), 'JPEG', quality=95)
+            poster.save(previews_folder / name, 'JPEG', quality=95)
             poster.save(os.path.join(UPLOAD_FOLDER, tiff_name), 'TIFF', compression='tiff_lzw')
+
+            preview_url = f"https://hangit-api-production.up.railway.app/static/previews/{name}"
             
             posters.append({
                 'type': ptype,
                 'name': name,
                 'tiff_name': tiff_name,
-                'preview': f"data:image/jpeg;base64,{base64.b64encode(buf.getvalue()).decode()}",
+                'preview': preview_url,
                 'color': rgb_to_hex(bg)
             })
         
