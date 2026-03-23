@@ -557,6 +557,22 @@ def select_album():
         genres = [g.lower() for g in artist_data.get('genres', [])]
         genres = ["trap" if g == "manele" else g for g in genres]
 
+        # Albume artist
+        try:
+            artist_albums = sp.artist_albums(album['artists'][0]['id'], album_type='album', limit=6)
+            other_albums = [
+                {
+                    'id': a['id'],
+                    'name': a['name'],
+                    'cover': a['images'][0]['url'] if a['images'] else None,
+                    'release_year': a['release_date'].split('-')[0] if a.get('release_date') else 'N/A'
+                }
+                for a in artist_albums['items']
+                if a['id'] != album_id
+            ][:5]
+        except:
+            other_albums = []
+
         label = album.get("label", "Unknown Label").strip()
         if "/" in label:
             parts = [l.strip() for l in label.split("/")][:2]
@@ -585,7 +601,8 @@ def select_album():
                     'accent': rgb_to_hex(accent), 'accent_rgb': accent,
                     'palette': [rgb_to_hex(c) for c in palette], 'palette_rgb': palette,
                     'is_bw': is_bw
-                }
+                },
+                'other_albums': other_albums
             }
         })
     except Exception as e:
